@@ -1,3 +1,4 @@
+// ======================= IMPORTS =======================
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -9,6 +10,7 @@ const mongoose = require('mongoose');
 const users = require('./modules/module');
 const Meeting = require('./modules/meeting');
 
+// ======================= SERVER & SOCKET SETUP =======================
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -18,8 +20,7 @@ const io = new Server(server, {
   }
 });
 
-
-// ======================= DATABASE =======================
+// ======================= DATABASE CONNECTION =======================
 const MONGODB_URI = process.env.MONGODB_URI;
 const mongooseOpts = { useNewUrlParser: true, useUnifiedTopology: true };
 
@@ -39,7 +40,7 @@ app.use('/peerjs', peerServer);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // your JS/CSS
+app.use(express.static('public')); // serves your JS/CSS from public/
 
 const meetings = {}; // memory store: roomId → admin + permissions
 
@@ -77,8 +78,8 @@ app.post('/schedule', async (req, res) => {
   const fullDate = new Date(`${date}T${time}`);
   const roomId = uuidV4();
 
-  // ✅ use dynamic URL for cloud
-  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT || 3000}`;
+  // ✅ use dynamic URL for local or Render
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
   const link = `${baseUrl}/meeting/${roomId}`;
 
   await Meeting.create({ title, date: fullDate, link, createdBy });
@@ -91,7 +92,7 @@ app.get('/mymeetings/:user', async (req, res) => {
   res.render('mymeetings', { meetings });
 });
 
-// ======================= SOCKET.IO =======================
+// ======================= SOCKET.IO (Video & Controls) =======================
 io.on('connection', socket => {
   socket.on('join-room', (roomId, userId, userName, isAdmin) => {
     if (!meetings[roomId]) meetings[roomId] = { adminId: null, permissions: {} };
@@ -100,20 +101,27 @@ io.on('connection', socket => {
     socket.join(roomId);
     meetings[roomId].permissions[userId] = { mic: true, cam: true, share: false };
 
+    // ✅ NEW LINE: Notify other participants when a user joins
+    socket.to(roomId).emit('user-connected', userId);
+
+    // If not admin, request approval
     if (!isAdmin) {
       const adminId = meetings[roomId]?.adminId;
       if (adminId) io.to(adminId).emit('join-request', { userId, userName });
     }
 
+    // Handle admin approval
     socket.on('approval-decision', ({ targetId, approved }) => {
       if (approved) io.to(targetId).emit('join-approved');
       else io.to(targetId).emit('join-denied');
     });
 
+    // Handle permission toggles (mute/video/screen share)
     socket.on('toggle-permission', ({ targetId, type, value }) => {
       io.to(targetId).emit('permission-updated', { type, value });
     });
 
+    // Handle disconnect
     socket.on('disconnect', () => {
       socket.to(roomId).emit('user-disconnected', userId);
     });
