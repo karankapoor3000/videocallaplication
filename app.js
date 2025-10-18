@@ -1,10 +1,8 @@
-require('dotenv').config(); // loads .env in local dev; harmless on Rendernpm install peer
-
 const express = require('express');
-const { ExpressPeerServer } = require('peer');
-
 const http = require('http');
 const { Server } = require('socket.io');
+const { ExpressPeerServer } = require('peer');
+require('dotenv').config(); // Loads .env locally
 const { v4: uuidV4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
@@ -13,9 +11,15 @@ const Meeting = require('./modules/meeting');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 
-// connect MongoDB
+
+// ======================= DATABASE =======================
 const MONGODB_URI = process.env.MONGODB_URI;
 const mongooseOpts = { useNewUrlParser: true, useUnifiedTopology: true };
 
@@ -23,13 +27,19 @@ mongoose.connect(MONGODB_URI, mongooseOpts)
   .then(() => console.log('MongoDB Connected ✅'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-
-
+// ======================= APP SETUP =======================
 app.set('view engine', 'ejs');
-app.use('/peerjs', ExpressPeerServer(server, { debug: true }));
+
+// ✅ Serve PeerJS under /peerjs path
+const peerServer = ExpressPeerServer(server, {
+  debug: true,
+  path: '/'
+});
+app.use('/peerjs', peerServer);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static('public')); // your JS/CSS
 
 const meetings = {}; // memory store: roomId → admin + permissions
 
@@ -66,7 +76,10 @@ app.post('/schedule', async (req, res) => {
   const { title, date, time, createdBy } = req.body;
   const fullDate = new Date(`${date}T${time}`);
   const roomId = uuidV4();
-  const link = `http://localhost:3000/meeting/${roomId}`;
+
+  // ✅ use dynamic URL for cloud
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT || 3000}`;
+  const link = `${baseUrl}/meeting/${roomId}`;
 
   await Meeting.create({ title, date: fullDate, link, createdBy });
   res.send(`✅ Meeting scheduled: ${link}`);
@@ -80,7 +93,6 @@ app.get('/mymeetings/:user', async (req, res) => {
 
 // ======================= SOCKET.IO =======================
 io.on('connection', socket => {
-  // user joins
   socket.on('join-room', (roomId, userId, userName, isAdmin) => {
     if (!meetings[roomId]) meetings[roomId] = { adminId: null, permissions: {} };
     if (isAdmin) meetings[roomId].adminId = socket.id;
@@ -108,8 +120,6 @@ io.on('connection', socket => {
   });
 });
 
+// ======================= START SERVER =======================
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
