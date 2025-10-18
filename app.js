@@ -69,7 +69,7 @@ app.post('/login', async (req, res) => {
 });
 
 // ======================= MEETING ROUTES =======================
-app.get('/create', (req, res) => res.redirect(`/meeting/${uuidV4()}`));
+app.get('/create', (req, res) => res.redirect(`/meeting/${uuidV4()}?admin=true`));
 app.get('/meeting/:room', (req, res) => res.render('meeting', { roomId: req.params.room }));
 
 // Schedule a future meeting
