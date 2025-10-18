@@ -4,7 +4,7 @@ const { Server } = require('socket.io');
 const { ExpressPeerServer } = require('peer');
 require('dotenv').config(); // Loads .env locally
 const { v4: uuidV4 } = require('uuid');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const users = require('./modules/module');
 const Meeting = require('./modules/meeting');
