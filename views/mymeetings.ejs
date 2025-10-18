@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head><title>My Meetings</title></head>
+  <body>
+    <h2>Upcoming Meetings</h2>
+    <ul>
+      <% meetings.forEach(m => { %>
+        <li>
+          <b><%= m.title %></b> - <%= m.date.toLocaleString() %> -
+          <a href="<%= m.link %>">Join</a>
+        </li>
+      <% }) %>
+    </ul>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Meeting Room</title>
+    <style>
+      body { background:#000; color:#fff; text-align:center; }
+      video { width:45%; margin:5px; border-radius:10px; }
+      button { margin:5px; padding:8px; }
+    </style>
+  </head>
+  <body>
+    <h3>Meeting Room ID: <%= roomId %></h3>
+    <div id="video-grid"></div>
+
+    <div>
+      <button id="muteBtn">Mute</button>
+      <button id="camBtn">Camera Off</button>
+      <button id="shareBtn">Share Screen</button>
+      <button onclick="toggleUser('mic', false)">Mute All</button>
+      <button onclick="toggleUser('cam', false)">Turn Off All Cameras</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="/script.js"></script>
+    <script>const ROOM_ID = "<%= roomId %>";</script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Home</title></head>
+  <body>
+    <h2>Welcome, <%= person.name %> 👋</h2>
+    <button onclick="window.location.href='/create'">Create New Meeting</button>
+
+    <h3>Join an existing meeting</h3>
+    <input id="room" placeholder="Enter Meeting ID" />
+    <button onclick="joinMeeting()">Join</button>
+
+    <script>
+      function joinMeeting() {
+        const id = document.getElementById('room').value.trim();
+        if (id) window.location.href = `/meeting/${id}`;
+      }
+    </script>
+  </body>
+</html>
