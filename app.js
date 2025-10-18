@@ -16,9 +16,14 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // connect MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const MONGODB_URI = process.env.MONGODB_URI;
+const mongooseOpts = { useNewUrlParser: true, useUnifiedTopology: true };
+
+mongoose.connect(MONGODB_URI, mongooseOpts)
   .then(() => console.log('MongoDB Connected ✅'))
-  .catch(err => console.log(err));
+  .catch(err => console.error('MongoDB connection error:', err));
+
+
 
 app.set('view engine', 'ejs');
 app.use('/peerjs', ExpressPeerServer(server, { debug: true }));
