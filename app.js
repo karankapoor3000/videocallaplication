@@ -16,9 +16,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // connect MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/meetusers')
-.then(() => console.log('MongoDB Connected ✅'))
-.catch(err => console.log(err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB Connected ✅'))
+  .catch(err => console.log(err));
 
 app.set('view engine', 'ejs');
 app.use('/peerjs', ExpressPeerServer(server, { debug: true }));
